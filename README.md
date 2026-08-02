@@ -40,21 +40,7 @@ The notebook develops the simulation in stages:
 
 Standard Google Colab does not include DEVSIM by default. Before using the simulation notebook in Colab, configure a compatible DEVSIM environment and make `diode_common.py` available in the notebook's working directory. Otherwise, run it in a prepared local or hosted TCAD environment.
 
-## Intended audience
-
-The material is aimed at students who are new to semiconductor device physics and scientific programming. Prior Python experience is not assumed; the programming notebook is designed to be used alongside the lecture and tutorial activities.
-
-## Contributing and extending the course
-
-Useful student extensions include:
-
-- changing doping, temperature, mobility, or generation parameters;
-- testing how recombination changes the J–V curve;
-- adding series-resistance or shunt-resistance effects;
-- comparing numerical results with an analytical diode model; and
-- improving plots, comments, or explanations in the notebooks.
-
-When sharing modified notebooks, keep the explanatory text with the code and record the assumptions and parameter values used to generate the results.
+<a href="https://colab.research.google.com/github/seb-bonilla/pv-basics-course/blob/main/solar_cell_simulation.ipynb" target="_blank" rel="noopener noreferrer"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open solar cell simulation in Google Colab"></a>
 
 ## Licence
 
