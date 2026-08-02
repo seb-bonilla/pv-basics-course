@@ -2,57 +2,30 @@
 
 Lecture and hands-on tutorial materials for an introduction to semiconductor devices and p–n junction solar cells. The course combines the underlying physics with a practical, learn-by-doing approach to scientific programming.
 
-## Course overview
+## Learning to code in Python
+
+The [`programming_basics.ipynb`](programming_basics.ipynb) notebook introduces the core ideas needed to begin scientific programming in Python. It covers variables, data types, expressions, functions, methods, conditional statements, loops, collections, modules and libraries, and debugging.
+
+Students should work through the notebook by running the code cells, changing the examples, and completing the small tasks. It is designed for beginners and can be used directly in Google Colab without installing Python on a personal computer.
+
+[Open the programming basics notebook directly in Google Colab](https://colab.research.google.com/github/seb-bonilla/pv-basics-course/blob/main/programming_basics.ipynb)
+
+## Solar-cell simulation
+
+The `solar_cell_simulation.ipynb` notebook is completed in the classroom with the lecturer while the contents of the lecture are being explained. The notebook connects the semiconductor physics of a silicon p–n junction diode with the numerical methods used to simulate its behaviour.
 
 Students are introduced to:
 
-- semiconductor conductivity, carrier concentration, and interfaces;
-- the role of interfaces in semiconductor devices, using MOSFETs as an example;
-- p–n junction diode operation in the dark and under illumination;
-- photovoltaic current, voltage, power, recombination, and efficiency losses;
-- Python programming fundamentals in Google Colab; and
-- numerical semiconductor-device simulation using DEVSIM.
+- computational mesh creation for a one-dimensional silicon device;
+- silicon material properties and an abrupt p–n doping profile;
+- the equilibrium solution of Poisson's equation;
+- the coupled drift–diffusion equations for electrons and holes;
+- potential, carrier-density, electric-field, and energy-band diagrams;
+- dark current–voltage (J–V) characteristics;
+- optical generation and illuminated J–V characteristics; and
+- solar-cell performance metrics, including $J_{SC}$, $V_{OC}$, maximum power, fill factor, and conversion efficiency.
 
-The lecture/tutorial sequence is built around three exercises:
-
-1. Explore how interface charge and capacitance affect MOSFET threshold voltage.
-2. Investigate MOSFET transfer curves and operational regimes.
-3. Reproduce a solar-cell J–V curve and extend the model to include surface-recombination losses.
-
-## Repository contents
-
-| File | Purpose |
-| --- | --- |
-| [`programming_basics.ipynb`](programming_basics.ipynb) | Beginner-friendly Python notebook covering variables, data types, expressions, functions, methods, conditionals, loops, collections, modules/libraries, and debugging. |
-| [`solar_cell_simulation.ipynb`](solar_cell_simulation.ipynb) | Guided silicon p–n junction simulation: mesh creation, material and doping definitions, equilibrium solution, drift–diffusion equations, energy-band diagrams, dark and illuminated J–V curves, and solar-cell performance metrics. |
-| [`diode_common.py`](diode_common.py) | Reusable DEVSIM helper functions for meshes, silicon parameters, doping, initial solutions, and drift–diffusion setup. |
-| [`LICENSE`](LICENSE) | GNU General Public License, version 3. |
-
-The wider teaching folder also contains the lecture slide decks and the introductory Colab guide:
-
-- `2026_PV_principles_full_v1.pptx` — full lecture/tutorial deck, including semiconductor devices, interfaces, MOSFETs, p–n junction solar cells, and exercises.
-- `2026_PV_principles_vid_v1.pptx` — video-oriented version of the lecture deck.
-- `Introduction to programming with Colab.docx` — getting-started guide for Google Colab, including account setup and introductory programming videos.
-
-These three teaching assets are currently outside this GitHub repository. Copy them into the repository if students should download them directly from GitHub.
-
-## Suggested learning path
-
-1. Read the lecture material on semiconductors, interfaces, and p–n junction solar cells.
-2. Work through `programming_basics.ipynb` in Google Colab. Run each cell, change the examples, and complete the small tasks.
-3. Use the lecture exercises to connect the equations to plots and device behaviour.
-4. Study `solar_cell_simulation.ipynb` to see how a physical model is translated into a numerical device simulation.
-5. Compare dark and illuminated J–V characteristics and calculate $J_{SC}$, $V_{OC}$, the maximum-power point, fill factor, and conversion efficiency.
-
-## Running the notebooks
-
-### Python basics
-
-Open [`programming_basics.ipynb`](programming_basics.ipynb) in [Google Colab](https://colab.research.google.com/) and run the cells from top to bottom. No local Python installation is required for this introductory notebook.
-
-### Solar-cell simulation
-
-`solar_cell_simulation.ipynb` imports `devsim`, DEVSIM's Python packages, NumPy, Matplotlib, Pandas, and the local `diode_common.py` module. It is configured with a `tcad_env` notebook kernel and therefore requires a Python environment in which DEVSIM is installed and discoverable.
+The simulation notebook imports `devsim`, DEVSIM's Python packages, NumPy, Matplotlib, Pandas, and the local `diode_common.py` module. It is configured with a `tcad_env` notebook kernel and therefore requires a Python environment in which DEVSIM is installed and discoverable.
 
 The notebook develops the simulation in stages:
 
