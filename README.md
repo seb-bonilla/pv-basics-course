@@ -8,7 +8,7 @@ The [`programming_basics.ipynb`](programming_basics.ipynb) notebook introduces t
 
 Students should work through the notebook by running the code cells, changing the examples, and completing the small tasks. It is designed for beginners and can be used directly in Google Colab without installing Python on a personal computer.
 
-[Open the programming basics notebook directly in Google Colab](https://colab.research.google.com/github/seb-bonilla/pv-basics-course/blob/main/programming_basics.ipynb)
+<a href="https://colab.research.google.com/github/seb-bonilla/pv-basics-course/blob/main/programming_basics.ipynb" target="_blank" rel="noopener noreferrer"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open programming basics in Google Colab"></a>
 
 ## Solar-cell simulation
 
