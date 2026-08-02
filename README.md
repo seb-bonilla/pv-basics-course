@@ -25,7 +25,7 @@ Students are introduced to:
 - optical generation and illuminated J–V characteristics; and
 - solar-cell performance metrics, including $J_{SC}$, $V_{OC}$, maximum power, fill factor, and conversion efficiency.
 
-The simulation notebook imports `devsim`, DEVSIM's Python packages, NumPy, Matplotlib, Pandas, and the local `diode_common.py` module. It is configured with a `tcad_env` notebook kernel and therefore requires a Python environment in which DEVSIM is installed and discoverable.
+The simulation notebook imports `devsim`, DEVSIM's Python packages, NumPy, Matplotlib, Pandas, and the local `pv_cell_functions.py` module. It is configured with a `tcad_env` notebook kernel and therefore requires a Python environment in which DEVSIM is installed and discoverable.
 
 The notebook develops the simulation in stages:
 
@@ -38,7 +38,7 @@ The notebook develops the simulation in stages:
 - add a uniform optical-generation term to obtain the illuminated J–V curve; and
 - calculate power, $J_{SC}$, $V_{OC}$, maximum power, fill factor, and efficiency.
 
-Standard Google Colab does not include DEVSIM by default. Before using the simulation notebook in Colab, configure a compatible DEVSIM environment and make `diode_common.py` available in the notebook's working directory. Otherwise, run it in a prepared local or hosted TCAD environment.
+Standard Google Colab does not include DEVSIM by default. Before using the simulation notebook in Colab, configure a compatible DEVSIM environment and make `pv_cell_functions.py` available in the notebook's working directory. Otherwise, run it in a prepared local or hosted TCAD environment.
 
 <a href="https://colab.research.google.com/github/seb-bonilla/pv-basics-course/blob/main/solar_cell_simulation.ipynb" target="_blank" rel="noopener noreferrer"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open solar cell simulation in Google Colab"></a>
 
