@@ -271,7 +271,7 @@ def quasi_fermi_voltage(
         )
         plt.text(
             0.75, 0.5 * (electron_qfl + hole_qfl),
-            fr"$qV_{{oc,max}}=\\Delta E_F={qfl_separation:.2f}$ eV",
+            fr"$qV_{{oc,max}}$ = $\Delta E_F={qfl_separation:.2f}$ eV",
             va="center",
         )
         plt.xlim(0, 1.45)
