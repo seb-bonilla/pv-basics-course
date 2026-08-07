@@ -59,9 +59,12 @@ def set_net_doping(device, region):
     CreateNodeModel(device, region, "NetDoping", "Donors-Acceptors")
 
 
-def simulate_doped_silicon_bar(doping_values, voltages, length=1e-5):
-    """Return DEVSIM I-V curves for a uniformly n-doped 1D silicon bar."""
+def simulate_doped_silicon_bar(
+    doping_values, voltages, length=0.1, width=1e-2, height=1e-2
+):
+    """Return I-V curves for a uniformly n-doped bar (dimensions in cm)."""
     curves = {}
+    area = width * height
 
     for index, doping in enumerate(doping_values):
         device = f"SiliconBar{index}"
@@ -107,7 +110,7 @@ def simulate_doped_silicon_bar(doping_values, voltages, length=1e-5):
             hole = get_contact_current(
                 device=device, contact="left", equation="HoleContinuityEquation"
             )
-            currents.append(electron + hole)
+            currents.append((electron + hole) * area)
 
         curves[doping] = currents
 
