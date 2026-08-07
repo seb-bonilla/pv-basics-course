@@ -335,3 +335,169 @@ def drift_diffusion_initial_solution(device, region, circuit_contacts=None):
             CreateSiliconDriftDiffusionAtContact(device, region, contact, True)
         else:
             CreateSiliconDriftDiffusionAtContact(device, region, contact)
+
+
+def simulate_complete_solar_cell(
+    cell_width_um=100,
+    p_doping_cm3=1e17,
+    n_doping_cm3=1e15,
+    tau_n_s=1e-3,
+    tau_p_s=1e-3,
+    generation_cm3_s=2.5e19,
+    junction_fraction=0.5,
+    cell_area_cm2=1.0,
+    voltage_stop=0.8,
+    voltage_step=0.02,
+    temperature=300,
+):
+    """Run and plot a configurable illuminated 1D silicon solar cell."""
+    import matplotlib.pyplot as plt
+    import numpy as np
+
+    device = "StudentSolarCell"
+    mesh = "student_solar_mesh"
+    region = "Silicon"
+    q = 1.602176634e-19
+    length_cm = cell_width_um * 1e-4
+    junction_cm = junction_fraction * length_cm
+
+    if not 0 < junction_fraction < 1:
+        raise ValueError("junction_fraction must lie between 0 and 1")
+    if device in get_device_list():
+        delete_device(device=device)
+    if mesh in get_mesh_list():
+        delete_mesh(mesh=mesh)
+
+    create_1d_mesh(mesh=mesh)
+    add_1d_mesh_line(mesh=mesh, pos=0, ps=length_cm / 80, tag="top")
+    add_1d_mesh_line(
+        mesh=mesh, pos=junction_cm, ps=length_cm / 400, tag="junction"
+    )
+    add_1d_mesh_line(mesh=mesh, pos=length_cm, ps=length_cm / 80, tag="bot")
+    add_1d_contact(mesh=mesh, name="top", tag="top", material="metal")
+    add_1d_contact(mesh=mesh, name="bot", tag="bot", material="metal")
+    add_1d_region(
+        mesh=mesh, material="Si", region=region, tag1="top", tag2="bot"
+    )
+    finalize_mesh(mesh=mesh)
+    create_device(mesh=mesh, device=device)
+
+    SetSiliconParameters(device, region, temperature)
+    set_parameter(device=device, region=region, name="taun", value=tau_n_s)
+    set_parameter(device=device, region=region, name="taup", value=tau_p_s)
+    CreateNodeModel(
+        device, region, "Acceptors",
+        f"{float(p_doping_cm3)}*step({junction_cm}-x)",
+    )
+    CreateNodeModel(
+        device, region, "Donors",
+        f"{float(n_doping_cm3)}*step(x-{junction_cm})",
+    )
+    CreateNodeModel(device, region, "NetDoping", "Donors-Acceptors")
+
+    initial_solution(device, region)
+    solve(type="dc", absolute_error=1.0, relative_error=1e-10, maximum_iterations=80)
+    drift_diffusion_initial_solution(device, region)
+    solve(type="dc", absolute_error=1e10, relative_error=1e-10, maximum_iterations=80)
+
+    # Retain SRH recombination and add uniform electron-hole photogeneration.
+    CreateNodeModel(
+        device, region, "ElectronGeneration",
+        f"-{q}*USRH + {q}*{float(generation_cm3_s)}",
+    )
+    CreateNodeModel(
+        device, region, "HoleGeneration",
+        f"{q}*USRH - {q}*{float(generation_cm3_s)}",
+    )
+
+    top_bias = GetContactBiasName("top")
+    bot_bias = GetContactBiasName("bot")
+    set_parameter(device=device, name=bot_bias, value=0.0)
+    voltages = np.arange(0, voltage_stop + 0.5 * voltage_step, voltage_step)
+    current_density = []
+
+    for voltage in voltages:
+        set_parameter(device=device, name=top_bias, value=float(voltage))
+        solve(
+            type="dc", absolute_error=1e10, relative_error=1e-8,
+            maximum_iterations=100,
+        )
+        electron = get_contact_current(
+            device=device, contact="top", equation="ElectronContinuityEquation"
+        )
+        hole = get_contact_current(
+            device=device, contact="top", equation="HoleContinuityEquation"
+        )
+        current_density.append(-(electron + hole))
+
+    current_density = np.asarray(current_density)
+    power_density = voltages * current_density
+    positive_power = np.where(power_density > 0, power_density, 0)
+    mpp_index = int(np.argmax(positive_power))
+    jsc = float(current_density[0])
+    vmpp = float(voltages[mpp_index])
+    jmpp = float(current_density[mpp_index])
+    pmpp = float(positive_power[mpp_index])
+
+    crossings = np.where(np.diff(np.sign(current_density)) != 0)[0]
+    if crossings.size:
+        index = crossings[0]
+        voc = float(np.interp(
+            0.0,
+            current_density[index:index + 2][::-1],
+            voltages[index:index + 2][::-1],
+        ))
+    else:
+        voc = np.nan
+
+    fill_factor = pmpp / (voc * jsc) if voc > 0 and jsc > 0 else np.nan
+    efficiency = 100 * pmpp / 0.1
+    total_power_mw = 1e3 * pmpp * cell_area_cm2
+
+    parameters = (
+        f"Width={cell_width_um:g} µm | p={p_doping_cm3:.1e} cm⁻³ | "
+        f"n={n_doping_cm3:.1e} cm⁻³ | τn={tau_n_s:.1e} s | "
+        f"τp={tau_p_s:.1e} s | G={generation_cm3_s:.1e} cm⁻³ s⁻¹ | "
+        f"area={cell_area_cm2:g} cm²"
+    )
+    fig, axes = plt.subplots(1, 2, figsize=(12, 4.5))
+    axes[0].plot(voltages, 1e3 * current_density, "o-")
+    axes[0].axhline(0, color="black", linewidth=0.8)
+    axes[0].set(
+        xlabel="Voltage (V)", ylabel="Current density (mA/cm²)",
+        title="Illuminated J–V curve",
+    )
+    axes[0].grid(alpha=0.3)
+
+    axes[1].plot(voltages, 1e3 * power_density, "o-", color="tab:orange")
+    axes[1].plot(vmpp, 1e3 * pmpp, "ro", label=f"MPP = {1e3 * pmpp:.2f} mW/cm²")
+    axes[1].set(
+        xlabel="Voltage (V)", ylabel="Power density (mW/cm²)",
+        title="Power–voltage curve",
+    )
+    axes[1].grid(alpha=0.3)
+    axes[1].legend()
+    fig.suptitle(parameters, fontsize=10)
+    fig.tight_layout()
+    plt.show()
+
+    print(f"Jsc = {1e3 * jsc:.2f} mA/cm²")
+    print(f"Voc = {voc:.3f} V")
+    print(f"Maximum power density = {1e3 * pmpp:.2f} mW/cm²")
+    print(f"Total maximum power = {total_power_mw:.2f} mW")
+    print(f"Fill factor = {fill_factor:.3f}")
+    print(f"Efficiency = {efficiency:.2f} %")
+
+    return {
+        "voltage_V": voltages,
+        "current_density_A_cm2": current_density,
+        "power_density_W_cm2": power_density,
+        "Jsc_A_cm2": jsc,
+        "Voc_V": voc,
+        "Vmpp_V": vmpp,
+        "Jmpp_A_cm2": jmpp,
+        "Pmpp_W_cm2": pmpp,
+        "total_power_W": pmpp * cell_area_cm2,
+        "fill_factor": fill_factor,
+        "efficiency_percent": efficiency,
+    }
