@@ -161,10 +161,58 @@ def display_silicon_bar(length, width, height, units="µm"):
             camera=dict(eye=dict(x=1.5, y=1.5, z=1.15)),
         ),
         margin=dict(l=5, r=5, b=5, t=30),
-        height=500,
         showlegend=False,
     )
     fig.show()
+
+
+def am15g_absorption_limit(bandgap_wavelength_nm):
+    """Plot AM1.5G and return ideal photon flux and current below a cutoff."""
+    import matplotlib.pyplot as plt
+    import numpy as np
+    from pvlib import spectrum
+
+    h = 6.62607015e-34       # Planck constant (J s)
+    c = 299792458.0          # speed of light (m/s)
+    q = 1.602176634e-19      # elementary charge (C)
+
+    am15g = spectrum.get_reference_spectra(standard="ASTM G173-03")["global"]
+    wavelength_nm = am15g.index.to_numpy(dtype=float)
+    irradiance = am15g.to_numpy(dtype=float)  # W m^-2 nm^-1
+    photon_energy = h * c / (wavelength_nm * 1e-9)
+    photon_flux_spectrum = irradiance / photon_energy  # photons m^-2 s^-1 nm^-1
+    absorbed = wavelength_nm <= bandgap_wavelength_nm
+
+    photon_flux = np.trapz(
+        photon_flux_spectrum[absorbed], wavelength_nm[absorbed]
+    )
+    current_density_mA_cm2 = q * photon_flux * 0.1
+    bandgap_eV = 1239.841984 / bandgap_wavelength_nm
+
+    plt.figure(figsize=(8, 4))
+    plt.plot(wavelength_nm, irradiance, label="AM1.5G")
+    plt.fill_between(
+        wavelength_nm, 0, irradiance, where=absorbed, alpha=0.2,
+        label="Photons with $E \\geq E_g$",
+    )
+    plt.axvline(
+        bandgap_wavelength_nm, color="tab:red", linestyle="--",
+        label=fr"$E_g={bandgap_eV:.2f}$ eV ({bandgap_wavelength_nm:g} nm)",
+    )
+    plt.xlabel("Wavelength (nm)")
+    plt.ylabel("Spectral irradiance (W m$^{-2}$ nm$^{-1}$)")
+    plt.title("ASTM G173-03 AM1.5G spectrum")
+    plt.xlim(wavelength_nm.min(), wavelength_nm.max())
+    plt.grid(alpha=0.3)
+    plt.legend()
+    plt.tight_layout()
+    plt.show()
+
+    return {
+        "bandgap_eV": bandgap_eV,
+        "photon_flux_m2_s": photon_flux,
+        "maximum_current_density_mA_cm2": current_density_mA_cm2,
+    }
 
 
 def initial_solution(device, region, circuit_contacts=None):
