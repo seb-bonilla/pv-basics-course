@@ -151,8 +151,8 @@ def display_silicon_bar(length, width, height, units="µm"):
     )
     fig.update_layout(
         title="Silicon bar (drag to rotate; scroll to zoom)",
-        width=600,
-        height=300,
+        width=500,
+        height=250,
         scene=dict(
             xaxis_title=f"Length ({units})",
             yaxis_title=f"Width ({units})",
@@ -166,7 +166,7 @@ def display_silicon_bar(length, width, height, units="µm"):
     fig.show()
 
 
-def am15g_absorption_limit(bandgap_wavelength_nm):
+def am15g_absorption_limit(bandgap_wavelength_nm, plot=True):
     """Plot AM1.5G and return ideal photon flux and current below a cutoff."""
     import matplotlib.pyplot as plt
     import numpy as np
@@ -189,29 +189,108 @@ def am15g_absorption_limit(bandgap_wavelength_nm):
     current_density_mA_cm2 = q * photon_flux * 0.1
     bandgap_eV = 1239.841984 / bandgap_wavelength_nm
 
-    plt.figure(figsize=(8, 4))
-    plt.plot(wavelength_nm, irradiance, label="AM1.5G")
-    plt.fill_between(
-        wavelength_nm, 0, irradiance, where=absorbed, alpha=0.2,
-        label="Photons with $E \\geq E_g$",
-    )
-    plt.axvline(
-        bandgap_wavelength_nm, color="tab:red", linestyle="--",
-        label=fr"$E_g={bandgap_eV:.2f}$ eV ({bandgap_wavelength_nm:g} nm)",
-    )
-    plt.xlabel("Wavelength (nm)")
-    plt.ylabel("Spectral irradiance (W m$^{-2}$ nm$^{-1}$)")
-    plt.title("ASTM G173-03 AM1.5G spectrum")
-    plt.xlim(wavelength_nm.min(), wavelength_nm.max())
-    plt.grid(alpha=0.3)
-    plt.legend()
-    plt.tight_layout()
-    plt.show()
+    if plot:
+        plt.figure(figsize=(8, 4))
+        plt.plot(wavelength_nm, irradiance, label="AM1.5G")
+        plt.fill_between(
+            wavelength_nm, 0, irradiance, where=absorbed, alpha=0.2,
+            label="Photons with $E \\geq E_g$",
+        )
+        plt.axvline(
+            bandgap_wavelength_nm, color="tab:red", linestyle="--",
+            label=fr"$E_g={bandgap_eV:.2f}$ eV ({bandgap_wavelength_nm:g} nm)",
+        )
+        plt.xlabel("Wavelength (nm)")
+        plt.ylabel("Spectral irradiance (W m$^{-2}$ nm$^{-1}$)")
+        plt.title("ASTM G173-03 AM1.5G spectrum")
+        plt.xlim(wavelength_nm.min(), wavelength_nm.max())
+        plt.grid(alpha=0.3)
+        plt.legend()
+        plt.tight_layout()
+        plt.show()
 
     return {
         "bandgap_eV": bandgap_eV,
         "photon_flux_m2_s": photon_flux,
         "maximum_current_density_mA_cm2": current_density_mA_cm2,
+    }
+
+
+def quasi_fermi_voltage(
+    bandgap_eV,
+    doping_cm3,
+    excess_carriers_cm3,
+    doping_type="n",
+    temperature=300,
+    plot=True,
+):
+    """Calculate and optionally plot Boltzmann quasi-Fermi levels."""
+    import matplotlib.pyplot as plt
+    import numpy as np
+
+    k_eV = 8.617333262e-5
+    thermal_energy = k_eV * temperature
+    nc = 2.8e19   # silicon-like effective density of conduction states (cm^-3)
+    nv = 1.04e19  # silicon-like effective density of valence states (cm^-3)
+    intrinsic = np.sqrt(nc * nv) * np.exp(-bandgap_eV / (2 * thermal_energy))
+
+    if doping_type.lower() == "n":
+        electrons_dark = float(doping_cm3)
+        holes_dark = intrinsic**2 / electrons_dark
+    elif doping_type.lower() == "p":
+        holes_dark = float(doping_cm3)
+        electrons_dark = intrinsic**2 / holes_dark
+    else:
+        raise ValueError("doping_type must be 'n' or 'p'")
+
+    electrons = electrons_dark + excess_carriers_cm3
+    holes = holes_dark + excess_carriers_cm3
+
+    valence_band = 0.0
+    conduction_band = bandgap_eV
+    intrinsic_level = bandgap_eV / 2 + 0.5 * thermal_energy * np.log(nv / nc)
+    electron_qfl = intrinsic_level + thermal_energy * np.log(electrons / intrinsic)
+    hole_qfl = intrinsic_level - thermal_energy * np.log(holes / intrinsic)
+    qfl_separation = electron_qfl - hole_qfl
+
+    if plot:
+        plt.figure(figsize=(5, 5))
+        plt.axhline(conduction_band, color="tab:blue", linewidth=3, label=r"$E_C$")
+        plt.axhline(valence_band, color="tab:orange", linewidth=3, label=r"$E_V$")
+        plt.axhline(
+            electron_qfl, color="tab:green", linestyle="--", linewidth=2,
+            label=r"$E_{Fn}$",
+        )
+        plt.axhline(
+            hole_qfl, color="tab:red", linestyle="--", linewidth=2,
+            label=r"$E_{Fp}$",
+        )
+        plt.annotate(
+            "", xy=(0.72, electron_qfl), xytext=(0.72, hole_qfl),
+            arrowprops=dict(arrowstyle="<->", color="black", linewidth=1.5),
+        )
+        plt.text(
+            0.75, 0.5 * (electron_qfl + hole_qfl),
+            fr"$qV_{{oc,max}}=\\Delta E_F={qfl_separation:.2f}$ eV",
+            va="center",
+        )
+        plt.xlim(0, 1.45)
+        plt.ylim(-0.08 * bandgap_eV, 1.12 * bandgap_eV)
+        plt.xticks([])
+        plt.ylabel("Energy (eV)")
+        plt.title("Quasi-Fermi-level splitting under illumination")
+        plt.legend(loc="center left")
+        plt.tight_layout()
+        plt.show()
+
+    return {
+        "intrinsic_carrier_density_cm3": intrinsic,
+        "electron_density_cm3": electrons,
+        "hole_density_cm3": holes,
+        "electron_quasi_fermi_eV": electron_qfl,
+        "hole_quasi_fermi_eV": hole_qfl,
+        "quasi_fermi_splitting_eV": qfl_separation,
+        "maximum_voltage_V": qfl_separation,
     }
 
 
