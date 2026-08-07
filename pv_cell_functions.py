@@ -117,6 +117,54 @@ def simulate_doped_silicon_bar(
     return curves
 
 
+def display_silicon_bar(length, width, height, units="µm"):
+    """Display a rotatable Plotly model of a rectangular silicon bar."""
+    import plotly.graph_objects as go
+
+    x = [0, length, length, 0, 0, length, length, 0]
+    y = [0, 0, width, width, 0, 0, width, width]
+    z = [0, 0, 0, 0, height, height, height, height]
+
+    # Two triangles for each of the six faces.
+    i = [0, 0, 4, 4, 0, 0, 1, 1, 2, 2, 3, 3]
+    j = [1, 2, 6, 7, 1, 5, 2, 6, 3, 7, 0, 4]
+    k = [2, 3, 5, 6, 5, 4, 6, 5, 7, 6, 4, 7]
+
+    fig = go.Figure(
+        go.Mesh3d(
+            x=x,
+            y=y,
+            z=z,
+            i=i,
+            j=j,
+            k=k,
+            color="#87CEEB",
+            opacity=0.85,
+            flatshading=True,
+            lighting=dict(ambient=0.55, diffuse=0.8, specular=0.25),
+            hovertemplate=(
+                f"Length: {length:g} {units}<br>"
+                f"Width: {width:g} {units}<br>"
+                f"Height: {height:g} {units}<extra></extra>"
+            ),
+        )
+    )
+    fig.update_layout(
+        title="Silicon bar (drag to rotate; scroll to zoom)",
+        scene=dict(
+            xaxis_title=f"Length ({units})",
+            yaxis_title=f"Width ({units})",
+            zaxis_title=f"Height ({units})",
+            aspectmode="data",
+            camera=dict(eye=dict(x=1.5, y=1.5, z=1.15)),
+        ),
+        margin=dict(l=20, r=20, b=20, t=50),
+        height=500,
+        showlegend=False,
+    )
+    fig.show()
+
+
 def initial_solution(device, region, circuit_contacts=None):
     """Set up the potential-only equilibrium problem and contact conditions."""
     CreateSolution(device, region, "Potential")
