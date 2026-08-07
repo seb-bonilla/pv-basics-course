@@ -151,8 +151,8 @@ def display_silicon_bar(length, width, height, units="µm"):
     )
     fig.update_layout(
         title="Silicon bar (drag to rotate; scroll to zoom)",
-        width=500,
-        height=250,
+        width=700,
+        height=650,
         scene=dict(
             xaxis_title=f"Length ({units})",
             yaxis_title=f"Width ({units})",
